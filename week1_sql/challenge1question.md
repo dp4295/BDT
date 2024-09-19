@@ -13,7 +13,15 @@ GROUP BY
 
 2. How many days has each customer visited the restaurant?
 
-
+```sql
+SELECT
+  customer_id,
+  COUNT(DISTINCT order_date) AS visit_days
+FROM
+  sales
+GROUP BY
+  customer_id;
+```
    
 4. What was the first item from the menu purchased by each customer?
 5. What is the most purchased item on the menu and how many times was it purchased by all customers?
