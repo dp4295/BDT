@@ -46,7 +46,16 @@ LIMIT 1
 
 5. Which item was the most popular for each customer?
 ``` sql
-
+SELECT
+  s.customer_id,
+  s.product_id,
+  COUNT(*) AS order_count
+FROM
+  sales s
+GROUP BY
+  s.customer_id, s.product_id
+ORDER BY
+  s.customer_id, order_count DESC;
 ```
 
 6. Which item was purchased first by the customer after they became a member?
