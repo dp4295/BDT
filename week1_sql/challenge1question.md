@@ -46,16 +46,39 @@ LIMIT 1
 
 5. Which item was the most popular for each customer?
 ``` sql
+WITH PurchaseCounts AS (
+  SELECT
+    customer_id,
+    product_id,
+    COUNT(*) AS order_count
+  FROM
+    sales
+  GROUP BY
+    customer_id, product_id
+),
+MaxCounts AS (
+  SELECT
+    customer_id,
+    MAX(order_count) AS max_order_count
+  FROM
+    PurchaseCounts
+  GROUP BY
+    customer_id
+)
+
 SELECT
-  s.customer_id,
-  s.product_id,
-  COUNT(*) AS order_count
+  pc.customer_id,
+  m.product_name,
+  pc.order_count
 FROM
-  sales s
-GROUP BY
-  s.customer_id, s.product_id
+  PurchaseCounts pc
+JOIN
+  MaxCounts mc ON pc.customer_id = mc.customer_id AND pc.order_count = mc.max_order_count
+JOIN
+  menu m ON pc.product_id = m.product_id
 ORDER BY
-  s.customer_id, order_count DESC;
+  pc.customer_id;  -- Sort by customer_id to keep them together
+
 ```
 
 6. Which item was purchased first by the customer after they became a member?
