@@ -83,7 +83,30 @@ ORDER BY
 
 6. Which item was purchased first by the customer after they became a member?
 ``` sql
+WITH FirstPurchases AS (
+  SELECT
+    s.customer_id,
+    s.product_id,
+    s.order_date,
+    ROW_NUMBER() OVER (PARTITION BY s.customer_id ORDER BY s.order_date) AS rn
+  FROM
+    sales s
+  JOIN
+    members m ON s.customer_id = m.customer_id
+  WHERE
+    s.order_date >= m.join_date
+)
 
+SELECT
+  fp.customer_id,
+  m.product_name,
+  fp.order_date
+FROM
+  FirstPurchases fp
+JOIN
+  menu m ON fp.product_id = m.product_id
+WHERE
+  fp.rn = 1;
 ```
 10. Which item was purchased just before the customer became a member?
 11. 10. What is the total items and amount spent for each member before they became a member?
