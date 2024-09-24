@@ -25,8 +25,20 @@ GROUP BY
    
 3. What was the first item from the menu purchased by each customer?
 ``` sql
-
+SELECT customer_id, product_name, order_date
+FROM (
+  SELECT 
+    s.customer_id,
+    m.product_name,
+    s.order_date,
+    ROW_NUMBER() OVER (PARTITION BY s.customer_id ORDER BY s.order_date) AS rn
+  FROM sales s
+  JOIN menu m ON s.product_id = m.product_id
+) AS ranked_sales
+WHERE rn = 1;
 ```
+#### Output: Query 3
+![query3](OutputImages/q3.png)
 4. What is the most purchased item on the menu and how many times was it purchased by all customers?
 
 ``` sql
@@ -108,7 +120,75 @@ JOIN
 WHERE
   fp.rn = 1;
 ```
-10. Which item was purchased just before the customer became a member?
-11. 10. What is the total items and amount spent for each member before they became a member?
-12. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
-13. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+
+#### Output: Query 7
+7. Which item was purchased just before the customer became a member?
+```` sql
+SELECT customer_id, product_name, order_date
+FROM (
+  SELECT 
+    s.customer_id,
+    m.product_name,
+    s.order_date,
+    ROW_NUMBER() OVER (PARTITION BY s.customer_id ORDER BY s.order_date DESC) AS rn
+  FROM sales s
+  JOIN menu m ON s.product_id = m.product_id
+  JOIN members mem ON s.customer_id = mem.customer_id
+  WHERE s.order_date < mem.join_date
+) AS ranked_sales
+WHERE rn = 1;
+````
+![query7](OutputImages/q7.png)
+
+
+8. What is the total items and amount spent for each member before they became a member?
+```sql
+SELECT 
+  s.customer_id,
+  COUNT(s.product_id) AS total_items, 
+  SUM(m.price) AS total_amount_spent
+FROM sales s
+JOIN menu m ON s.product_id = m.product_id
+JOIN members mem ON s.customer_id = mem.customer_id
+WHERE s.order_date < mem.join_date
+GROUP BY s.customer_id;
+```
+### Output: Query 8
+![query](OutputImages/q8.png)
+
+9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+```sql
+SELECT 
+  s.customer_id,
+  SUM(CASE
+        WHEN m.product_name = 'sushi' THEN m.price * 10 * 2  -- 2x points for sushi
+        ELSE m.price * 10                                    -- Regular points for other items
+      END) AS total_points
+FROM sales s
+JOIN menu m ON s.product_id = m.product_id
+JOIN members mem ON s.customer_id = mem.customer_id
+WHERE s.order_date < mem.join_date
+GROUP BY s.customer_id;
+```
+### Output: Query 9
+![query9](OutputImages/q9.png)
+
+10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+```sql
+SELECT 
+  s.customer_id,
+  SUM(CASE 
+        -- If the purchase was made during the first week after joining, apply 2x points for all items
+        WHEN s.order_date BETWEEN mem.join_date AND DATE_ADD(mem.join_date, INTERVAL 7 DAY)
+        THEN m.price * 10 * 2
+        -- Apply 2x points for sushi and regular points for others
+        WHEN m.product_name = 'sushi' THEN m.price * 10 * 2
+        ELSE m.price * 10
+      END) AS total_points
+FROM sales s
+JOIN menu m ON s.product_id = m.product_id
+JOIN members mem ON s.customer_id = mem.customer_id
+WHERE s.order_date <= '2021-01-31'  -- Only consider purchases made in January
+GROUP BY s.customer_id;
+```
+![Query10](OutputImages/q10.png)
