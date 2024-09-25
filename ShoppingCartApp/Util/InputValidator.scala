@@ -40,4 +40,19 @@ object InputValidator {
     result
   }
 
+  def readDoubleWithRetry(prompt: String): Double = {
+    var valid = false
+    var result = 0.0
+    while (!valid) {
+      try {
+        result = scala.io.StdIn.readLine(prompt).toDouble
+        valid = true
+      } catch {
+        case _: NumberFormatException =>
+          println("Invalid input. Please enter a valid number.")
+      }
+    }
+    result
+  }
+
 }
